@@ -22,19 +22,26 @@ router.get('/:id', async(req,res)=>{
 
 
 
-router.post('/', async (req,res)=>{
-    let category = new Category({
-        name: req.body.name,
-        icon: req.body.icon,
-        color: req.body.color
-    })
-    category = await category.save();
+router.post('/', async (req, res) => {
+    let category = await Category.findOne({ name: req.body.name });
+    if (category) {
+        return res.status(400).send('Category with given name already exists');
+    } else {
+        category = new Category({
+            name: req.body.name,
+            icon: req.body.icon,
+            color: req.body.color
+        })
+        category = await category.save();
 
-    if(!category)
-    return res.status(400).send('the category cannot be created!')
+        if (!category)
+            return res.status(400).send('the category cannot be created!')
 
-    res.send(category);
+        res.send(category);
+    }
 })
+
+
 
 
 router.put('/:id',async (req, res)=> {
