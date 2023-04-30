@@ -1,0 +1,22 @@
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
+function userAuthJwt(req, res, next) {
+  const token = req.cookies.token;
+  console.log(token);
+
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication failed. Token missing.' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
+    if (err) {
+      return res.status(401).json({ message: 'Authentication failed. Token invalid.' });
+    }
+
+    req.user = decodedToken;
+    next();
+  });
+}
+
+module.exports = [cookieParser(), userAuthJwt];

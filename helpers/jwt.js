@@ -21,10 +21,10 @@ function authJwt() {
 
 async function isRevoked(req, payload, done) {
     if(!payload.isAdmin) {
-        done(null, true)
+        return done(new Error('Unauthorized'), false);
     }
 
-    done();
+    done(null, true);
 }
 
 

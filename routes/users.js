@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const userAuthJwt = require('../helpers/userjwt');
+
 
 router.get(`/`, async (req, res) =>{
     const userList = await User.find().select('-passwordHash');
@@ -13,14 +15,24 @@ router.get(`/`, async (req, res) =>{
     res.send(userList);
 })
 
-router.get('/:id', async(req,res)=>{
-    const user = await User.findById(req.params.id).select('-passwordHash');
 
-    if(!user) {
-        res.status(500).json({message: 'The user with the given ID was not found.'})
-    } 
-    res.status(200).send(user);
-})
+router.get('/:id', userAuthJwt, async (req, res) => {
+    const requestedUserId = req.params.id;
+  
+    // Verify that the user making the request is authorized to access this user's data
+    if (requestedUserId !== req.user.userId) {
+      return res.status(401).json({ message: 'Authentication failed. User not authorized.' });
+    }
+  
+    const user = await User.findById(requestedUserId).select('-passwordHash');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+  
+    res.status(200).json(user);
+  });
+  
+
 
 router.post('/', async (req,res)=>{
     let user = new User({
@@ -76,30 +88,34 @@ router.put('/:id',async (req, res)=> {
     res.send(user);
 })
 
-router.post('/login', async (req,res) => {
-    const user = await User.findOne({email: req.body.email})
+router.post('/login', async (req, res) => {
+    const user = await User.findOne({ email: req.body.email });
     const secret = process.env.secret;
-    if(!user) {
+    if (!user) {
         return res.status(400).send('The user not found');
     }
 
-    if(user && bcrypt.compareSync(req.body.password, user.passwordHash)) {
+    if (user && bcrypt.compareSync(req.body.password, user.passwordHash)) {
         const token = jwt.sign(
             {
                 userId: user.id,
                 isAdmin: user.isAdmin
             },
             secret,
-            {expiresIn : '1d'}
-        )
-       
-        res.status(200).send({user: user.email , token: token}) 
-    } else {
-       res.status(400).send('password is wrong!');
-    }
+            { expiresIn: '1d' }
+        );
 
-    
-})
+        res.cookie('token', token, {
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+            httpOnly: true,
+            secure: true // Set this to true if you're using HTTPS
+        });
+
+        res.status(200).send({ user: user.email, token: token });
+    } else {
+        res.status(400).send('password is wrong!');
+    }
+});
 
 
 router.post('/register', async (req, res) => {
