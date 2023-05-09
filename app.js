@@ -4,22 +4,20 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv/config');
-const authJwt = require('./helpers/jwt');
-const userAuthJwt = require('./helpers/userjwt');
 const errorHandler = require('./helpers/error-handler');
 const cookieParser = require('cookie-parser')
 
 
-app.use(cors());
+app.use(cors({
+    origin: 'http://yourclient.com',
+    credentials: true
+  }));
 app.options('*', cors())
 
 //middleware
 app.use(express.json());
 app.use(morgan('tiny'));
-// app.use(authJwt());
 
-app.use(cookieParser());
-// app.use(userAuthJwt());
 
 
 app.use('/public/uploads', express.static(__dirname + '/public/uploads'));
@@ -42,7 +40,8 @@ app.use(`${api}/orders`, ordersRoutes);
 mongoose.connect(process.env.CONNECTION_STRING, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    dbName: 'eshop-database'
+    dbName: 'eshop-database',
+    useFindAndModify: false
 })
 .then(()=>{
     console.log('Database Connection is ready...')
@@ -52,7 +51,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 })
 
 //Server
-app.listen(3000, ()=>{
+app.listen(2000, ()=>{
 
     console.log('server is running http://localhost:3000');
 })

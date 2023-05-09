@@ -55,20 +55,26 @@ router.get(`/:id`, async (req, res) =>{
     res.send(product);
 })
 
-router.post(`/`, uploadOptions.single('image'), async (req, res) =>{
+router.post('/', uploadOptions.array('images', 10), async (req, res) => {
     const category = await Category.findById(req.body.category);
-    if(!category) return res.status(400).send('Invalid Category')
+    console.log(category);
+    if (!category) return res.status(400).send('Invalid Category');
 
-    const file = req.file;
-    if(!file) return res.status(400).send('No image in the request')
+    const files = req.files;
+    if (!files) return res.status(400).send('No image in the request');
 
-    const fileName = file.filename
+    let imagesPaths = [];
     const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+
+    files.map(file => {
+        imagesPaths.push(`${basePath}${file.filename}`);
+    });
+
     let product = new Product({
         name: req.body.name,
         description: req.body.description,
         richDescription: req.body.richDescription,
-        image: `${basePath}${fileName}`,// "http://localhost:3000/public/upload/image-2323232"
+        images: imagesPaths,
         brand: req.body.brand,
         price: req.body.price,
         category: req.body.category,
@@ -76,15 +82,17 @@ router.post(`/`, uploadOptions.single('image'), async (req, res) =>{
         rating: req.body.rating,
         numReviews: req.body.numReviews,
         isFeatured: req.body.isFeatured,
-    })
+        volume: req.body.volume,
+    });
 
     product = await product.save();
 
-    if(!product) 
-    return res.status(500).send('The product cannot be created')
+    if (!product)
+        return res.status(500).send('The product cannot be created');
 
     res.send(product);
-})
+});
+
 
 router.put('/:id',async (req, res)=> {
     if(!mongoose.isValidObjectId(req.params.id)) {

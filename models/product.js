@@ -9,6 +9,10 @@ const productSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    volume: {
+        type: Number,
+        required: true
+    },
     richDescription: {
         type: String,
         default: ''
@@ -57,7 +61,7 @@ const productSchema = mongoose.Schema({
     },
 })
 
-productSchema.virtual('id').get(function () {
+productSchema.virtual('ObjectId').get(function () {
     return this._id.toHexString();
 });
 

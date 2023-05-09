@@ -1,9 +1,6 @@
 const mongoose = require('mongoose');
 
 const categorySchema = mongoose.Schema({
-    _id: {
-        type: Number,
-    },
     name: {
         type: String,
         required: true,
@@ -14,16 +11,15 @@ const categorySchema = mongoose.Schema({
     color: { 
         type: String,
     }
+})
+
+
+categorySchema.virtual('id').get(function () {
+    return this._id.toHexString();
 });
 
-categorySchema.pre('save', async function(next) {
-    if (this.isNew) {
-        const highestCategoryId = await mongoose.model('Category', categorySchema).findOne({}, '_id').sort('-_id').exec();
-        this._id = highestCategoryId ? highestCategoryId._id + 1 : 1;
-    }
-    next();
+categorySchema.set('toJSON', {
+    virtuals: true,
 });
 
-const Category = mongoose.model('Category', categorySchema);
-
-exports.Category = Category;
+exports.Category = mongoose.model('Category', categorySchema);
