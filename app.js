@@ -53,7 +53,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 })
 
 //Server
-app.listen(2000, ()=>{
+app.listen(3000, ()=>{
 
     console.log('server is running http://localhost:3000');
 })
