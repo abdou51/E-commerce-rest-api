@@ -5,6 +5,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const multer = require('multer');
 
+
 const FILE_TYPE_MAP = {
     'image/png': 'png',
     'image/jpeg': 'jpeg',
@@ -64,7 +65,7 @@ router.post('/', uploadOptions.array('images', 10), async (req, res) => {
     if (!files) return res.status(400).send('No image in the request');
 
     let imagesPaths = [];
-    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+    const basePath = `${req.protocol}://${req.get('host')}/tmp`;
 
     files.map(file => {
         imagesPaths.push(`${basePath}${file.filename}`);
@@ -167,7 +168,7 @@ router.put(
          }
          const files = req.files
          let imagesPaths = [];
-         const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+         const basePath = `${req.protocol}://${req.get('host')}/tmp`;
 
          if(files) {
             files.map(file =>{
