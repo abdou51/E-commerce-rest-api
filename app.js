@@ -8,6 +8,8 @@ const errorHandler = require('./helpers/error-handler');
 const cookieParser = require('cookie-parser')
 
 
+
+
 app.use(cors({
     origin: 'http://yourclient.com',
     credentials: true
