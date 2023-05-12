@@ -65,7 +65,7 @@ router.post('/', uploadOptions.array('images', 10), async (req, res) => {
     if (!files) return res.status(400).send('No image in the request');
 
     let imagesPaths = [];
-    const basePath = `${req.protocol}://${req.get('host')}/tmp`;
+    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
 
     files.map(file => {
         imagesPaths.push(`${basePath}${file.filename}`);
@@ -168,7 +168,7 @@ router.put(
          }
          const files = req.files
          let imagesPaths = [];
-         const basePath = `${req.protocol}://${req.get('host')}/tmp`;
+         const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
 
          if(files) {
             files.map(file =>{
