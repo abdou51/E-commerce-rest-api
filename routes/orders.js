@@ -2,6 +2,11 @@ const {Order} = require('../models/order');
 const express = require('express');
 const { OrderItem } = require('../models/order-item');
 const router = express.Router();
+const userGuest = require('../helpers/userGuest');
+const transporter = require('../helpers/smtpTransporter');
+const orderConfirmationTemplate = require('../helpers/mailOptions');
+const shippedOrder = require('../helpers/shippedOrder');
+const orderDetails = require('../helpers/orderDetails');
 
 router.get(`/`, async (req, res) =>{
     const orderList = await Order.find().populate('user', 'name').sort({'dateOrdered': -1});
@@ -26,62 +31,113 @@ router.get(`/:id`, async (req, res) =>{
     res.send(order);
 })
 
-router.post('/', async (req,res)=>{
-    const orderItemsIds = Promise.all(req.body.orderItems.map(async (orderItem) =>{
+router.post('/', userGuest, async (req, res) => {
+    const orderItemsIds = Promise.all(
+      req.body.orderItems.map(async (orderItem) => {
         let newOrderItem = new OrderItem({
-            quantity: orderItem.quantity,
-            product: orderItem.product
-        })
-
+          quantity: orderItem.quantity,
+          product: orderItem.product,
+        });
+  
         newOrderItem = await newOrderItem.save();
-
+  
         return newOrderItem._id;
-    }))
-    const orderItemsIdsResolved =  await orderItemsIds;
-
-    const totalPrices = await Promise.all(orderItemsIdsResolved.map(async (orderItemId)=>{
-        const orderItem = await OrderItem.findById(orderItemId).populate('product', 'price');
+      })
+    );
+  
+    const orderItemsIdsResolved = await orderItemsIds;
+  
+    const totalPrices = await Promise.all(
+      orderItemsIdsResolved.map(async (orderItemId) => {
+        const orderItem = await OrderItem.findById(orderItemId).populate(
+          'product',
+          'price'
+        );
         const totalPrice = orderItem.product.price * orderItem.quantity;
-        return totalPrice
-    }))
-
-    const totalPrice = totalPrices.reduce((a,b) => a +b , 0);
-
+        return totalPrice;
+      })
+    );
+  
+    const totalPrice = totalPrices.reduce((a, b) => a + b, 0);
+  
     let order = new Order({
         orderItems: orderItemsIdsResolved,
+        name:req.body.name,
         shippingAddress1: req.body.shippingAddress1,
-        shippingAddress2: req.body.shippingAddress2,
         city: req.body.city,
         zip: req.body.zip,
-        country: req.body.country,
         phone: req.body.phone,
+        email:req.body.email,
         status: req.body.status,
         totalPrice: totalPrice,
-        user: req.body.user,
-    })
+      });
+      if (req.user) {
+        order.user = req.user.userId;
+        order.userType = 'User'
+      }
+
     order = await order.save();
+    
+    if (!order) {
+      return res.status(400).send('The order cannot be created!');
+    }
 
-    if(!order)
-    return res.status(400).send('the order cannot be created!')
+    const details = await orderDetails(order.id);
+    const mailOptions = orderConfirmationTemplate(order, details);
 
+    
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error:', error);
+      } else {
+        console.log('Email sent:', info.response);
+      }
+    });
     res.send(order);
-})
+  });
 
 
-router.put('/:id',async (req, res)=> {
-    const order = await Order.findByIdAndUpdate(
-        req.params.id,
-        {
-            status: req.body.status
-        },
-        { new: true}
-    )
+  router.put('/ship/:id', async (req, res) => {
+    const order = await Order.findById(req.params.id);
+  
+    if (!order)
+      return res.status(400).send('The order cannot be found!');
+  
+    if (order.status === 'Shipped')
+      return res.status(400).send('Order is already shipped');
+  
+    order.status = 'Shipped';
+    const updatedOrder = await order.save();
+  
+    const details = await orderDetails(updatedOrder.id);
+    const mailOptions = shippedOrder(updatedOrder, details);
+    
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error:', error);
+      } else {
+        console.log('Email sent:', info.response);
+      }
+    });
+  
+    res.send(updatedOrder);
+  });
 
-    if(!order)
-    return res.status(400).send('the order cannot be update!')
+router.put('/cancel/:id', async (req, res) => {
+  const order = await Order.findByIdAndUpdate(
+    req.params.id,
+    {
+      status: 'Cancelled'
+    },
+    { new: true }
+  );
 
-    res.send(order);
-})
+  if (!order)
+      return res.status(400).send('The order cannot be updated!');
+
+  res.send(order);
+});
+
 
 
 router.delete('/:id', (req, res)=>{
@@ -99,6 +155,8 @@ router.delete('/:id', (req, res)=>{
     })
 })
 
+
+
 router.get('/get/totalsales', async (req, res)=> {
     const totalSales= await Order.aggregate([
         { $group: { _id: null , totalsales : { $sum : '$totalPrice'}}}
@@ -111,6 +169,8 @@ router.get('/get/totalsales', async (req, res)=> {
     res.send({totalsales: totalSales.pop().totalsales})
 })
 
+
+
 router.get(`/get/count`, async (req, res) =>{
     const orderCount = await Order.countDocuments((count) => count)
 
@@ -121,6 +181,8 @@ router.get(`/get/count`, async (req, res) =>{
         orderCount: orderCount
     });
 })
+
+
 
 router.get(`/get/userorders/:userid`, async (req, res) =>{
     const userOrderList = await Order.find({user: req.params.userid}).populate({ 

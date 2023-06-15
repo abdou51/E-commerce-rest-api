@@ -13,36 +13,13 @@ const productSchema = mongoose.Schema({
         type: Number,
         required: true
     },
-    richDescription: {
-        type: String,
-        default: ''
-    },
-    image: {
-        type: String,
-        default: ''
-    },
-    images: [{
-        type: String
-    }],
-    brand: {
-        type: String,
-        default: ''
-    },
     price : {
         type: Number,
         default:0
     },
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required:true
-    },
-    countInStock: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 255
-    },
+    images: [{
+        type: String
+    }],
     rating: {
         type: Number,
         default: 0,
@@ -59,6 +36,31 @@ const productSchema = mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    // richDescription: {
+    //     type: String,
+    //     default: ''
+    // },
+    // image: {
+    //     type: String,
+    //     default: ''
+    // },
+    
+    // brand: {
+    //     type: String,
+    //     default: ''
+    // },
+    // category: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Category',
+    //     required:true
+    // },
+    // countInStock: {
+    //     type: Number,
+    //     required: true,
+    //     min: 0,
+    //     max: 255
+    // },
+    
 })
 
 productSchema.virtual('ObjectId').get(function () {

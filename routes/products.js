@@ -57,10 +57,6 @@ router.get(`/:id`, async (req, res) =>{
 })
 
 router.post('/', uploadOptions.array('images', 10), async (req, res) => {
-    const category = await Category.findById(req.body.category);
-    console.log(category);
-    if (!category) return res.status(400).send('Invalid Category');
-
     const files = req.files;
     if (!files) return res.status(400).send('No image in the request');
 
@@ -74,12 +70,8 @@ router.post('/', uploadOptions.array('images', 10), async (req, res) => {
     let product = new Product({
         name: req.body.name,
         description: req.body.description,
-        richDescription: req.body.richDescription,
         images: imagesPaths,
-        brand: req.body.brand,
         price: req.body.price,
-        category: req.body.category,
-        countInStock: req.body.countInStock,
         rating: req.body.rating,
         numReviews: req.body.numReviews,
         isFeatured: req.body.isFeatured,
@@ -95,36 +87,43 @@ router.post('/', uploadOptions.array('images', 10), async (req, res) => {
 });
 
 
-router.put('/:id',async (req, res)=> {
-    if(!mongoose.isValidObjectId(req.params.id)) {
-       return res.status(400).send('Invalid Product Id')
+router.put('/:id', uploadOptions.array('images', 10), async (req, res) => {
+    console.log(req.params.id);
+    if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).send('Invalid Product Id');
     }
-    const category = await Category.findById(req.body.category);
-    if(!category) return res.status(400).send('Invalid Category')
+
+    const files = req.files;
+    let imagesPaths = [];
+    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+
+    if (files) {
+        files.map(file => {
+            imagesPaths.push(`${basePath}${file.filename}`);
+        });
+    }
 
     const product = await Product.findByIdAndUpdate(
         req.params.id,
         {
             name: req.body.name,
             description: req.body.description,
-            richDescription: req.body.richDescription,
-            image: req.body.image,
-            brand: req.body.brand,
+            images: imagesPaths,
             price: req.body.price,
-            category: req.body.category,
-            countInStock: req.body.countInStock,
             rating: req.body.rating,
             numReviews: req.body.numReviews,
             isFeatured: req.body.isFeatured,
+            volume: req.body.volume,
         },
-        { new: true}
-    )
+        { new: true }
+    );
 
-    if(!product)
-    return res.status(500).send('the product cannot be updated!')
+    if (!product)
+        return res.status(500).send('The product cannot be updated!');
 
     res.send(product);
-})
+});
+
 
 router.delete('/:id', (req, res)=>{
     Product.findByIdAndRemove(req.params.id).then(product =>{

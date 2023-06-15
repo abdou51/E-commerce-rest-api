@@ -15,6 +15,7 @@ app.use(cors({
     credentials: true
   }));
 app.options('*', cors())
+app.use(express.urlencoded({ extended: true }))
 
 //middleware
 app.use(express.json());
@@ -26,14 +27,14 @@ app.use('/public/uploads', express.static(__dirname + '/public/uploads'));
 app.use(errorHandler);
 
 //Routes
-const categoriesRoutes = require('./routes/categories');
+// const categoriesRoutes = require('./routes/categories');
 const productsRoutes = require('./routes/products');
 const usersRoutes = require('./routes/users');
 const ordersRoutes = require('./routes/orders');
 
 const api = process.env.API_URL;
 
-app.use(`${api}/categories`, categoriesRoutes);
+// app.use(`${api}/categories`, categoriesRoutes);
 app.use(`${api}/products`, productsRoutes);
 app.use(`${api}/users`, usersRoutes);
 app.use(`${api}/orders`, ordersRoutes);
@@ -52,10 +53,14 @@ mongoose.connect(process.env.CONNECTION_STRING, {
     console.log(err);
 })
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 2000;
 
 //Server
-app.listen(port, "0.0.0.0", ()=>{
+// app.listen(port, "0.0.0.0", ()=>{
+
+//     console.log('server is running http://localhost:3000');
+// })
+app.listen(port, ()=>{
 
     console.log('server is running http://localhost:3000');
 })

@@ -10,18 +10,23 @@ const orderSchema = mongoose.Schema({
         type: String,
         required: true,
     },
-    shippingAddress2: {
+    name: {
         type: String,
+        required: true,
     },
+    email: {
+        type: String,
+        required: true,
+    },
+    userType: {
+        type: String,
+        default: 'Guest',
+      },
     city: {
         type: String,
         required: true,
     },
     zip: {
-        type: String,
-        required: true,
-    },
-    country: {
         type: String,
         required: true,
     },
@@ -32,8 +37,9 @@ const orderSchema = mongoose.Schema({
     status: {
         type: String,
         required: true,
+        enum: ['Shipped', 'Pending', 'Cancelled'],
         default: 'Pending',
-    },
+      },
     totalPrice: {
         type: Number,
     },

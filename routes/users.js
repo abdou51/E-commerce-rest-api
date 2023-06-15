@@ -89,7 +89,7 @@ router.post('/login', async (req, res) => {
                 isAdmin: user.isAdmin
             },
             secret,
-            { expiresIn: '1d' }
+            { expiresIn: '1w' }
         );
 
         res.setHeader('Authorization', `Bearer ${token}`);
@@ -128,7 +128,7 @@ router.post('/register', async (req, res) => {
             return res.status(400).send('the user cannot be created!')
         
 
-        res.send(user);
+        res.status(200).send('User registered successfully');
     }
 })
 
