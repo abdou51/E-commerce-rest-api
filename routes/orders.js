@@ -32,51 +32,72 @@ router.get(`/:id`, async (req, res) =>{
 })
 
 router.post('/', userGuest, async (req, res) => {
-    const orderItemsIds = Promise.all(
-      req.body.orderItems.map(async (orderItem) => {
-        let newOrderItem = new OrderItem({
-          quantity: orderItem.quantity,
-          product: orderItem.product,
-        });
-  
-        newOrderItem = await newOrderItem.save();
-  
-        return newOrderItem._id;
-      })
-    );
-  
-    const orderItemsIdsResolved = await orderItemsIds;
-  
-    const totalPrices = await Promise.all(
-      orderItemsIdsResolved.map(async (orderItemId) => {
-        const orderItem = await OrderItem.findById(orderItemId).populate(
-          'product',
-          'price'
-        );
-        const totalPrice = orderItem.product.price * orderItem.quantity;
-        return totalPrice;
-      })
-    );
-  
-    const totalPrice = totalPrices.reduce((a, b) => a + b, 0);
-  
-    let order = new Order({
-        orderItems: orderItemsIdsResolved,
-        name:req.body.name,
-        shippingAddress1: req.body.shippingAddress1,
-        city: req.body.city,
-        zip: req.body.zip,
-        phone: req.body.phone,
-        email:req.body.email,
-        status: req.body.status,
-        totalPrice: totalPrice,
-      });
-      if (req.user) {
-        order.user = req.user.userId;
-        order.userType = 'User'
-      }
+  const orderItems = req.body.orderItems; // Retrieve the order items from the request
 
-    order = await order.save();
+  const orderItemsIds = await Promise.all(
+    orderItems.map(async (orderItem) => {
+      let newOrderItem = new OrderItem({
+        quantity: orderItem.quantity,
+        product: orderItem.product,
+      });
+
+      newOrderItem = await newOrderItem.save();
+
+      // Populate the entire product object before returning the complete order item object
+      await newOrderItem.populate('product').execPopulate();
+      newOrderItem.productObject = newOrderItem.product;
+
+      return newOrderItem.toObject();
+    })
+  );
+
+  const totalPrices = await Promise.all(
+    orderItemsIds.map(async (orderItem) => {
+      const orderItemDetails = await OrderItem.findById(orderItem._id).populate(
+        'product',
+        'price'
+      );
+      const totalPrice = orderItemDetails.product.price * orderItem.quantity;
+      return totalPrice;
+    })
+  );
+
+  const totalPrice = totalPrices.reduce((a, b) => a + b, 0);
+
+  let order = new Order({
+    orderItems: orderItemsIds,
+    name: req.body.name,
+    shippingAddress1: req.body.shippingAddress1,
+    city: req.body.city,
+    zip: req.body.zip,
+    phone: req.body.phone,
+    email: req.body.email,
+    status: req.body.status,
+    totalPrice: totalPrice,
+  });
+
+  if (req.user) {
+    order.user = req.user.userId;
+    order.userType = 'User';
+  }
+
+  // Save the order
+  order = await order.save();
+
+  // Populate the orderItems field with the complete OrderItem objects
+  order = await order
+  .populate({
+    path: 'orderItems',
+    populate: {
+      path: 'product',
+      select: 'name price volume quantity',
+    },
+  })
+  .execPopulate();
+
+  console.log(order);
+
+
     
     if (!order) {
       return res.status(400).send('The order cannot be created!');
