@@ -17,19 +17,29 @@ router.get(`/`, async (req, res) =>{
     res.send(orderList);
 })
 
-router.get(`/:id`, async (req, res) =>{
+router.get(`/:id`, async (req, res) => {
+  try {
     const order = await Order.findById(req.params.id)
-    .populate('user', 'name')
-    .populate({ 
-        path: 'orderItems', populate: {
-            path : 'product', populate: 'category'} 
-        });
+      .populate('user', 'name')
+      .populate({
+        path: 'orderItems',
+        populate: {
+          path: 'product',
+          populate: 'category'
+        }
+      });
 
-    if(!order) {
-        res.status(500).json({success: false})
-    } 
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
     res.send(order);
-})
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 
 router.post('/', userGuest, async (req, res) => {
   const orderItems = req.body.orderItems; // Retrieve the order items from the request
@@ -79,6 +89,7 @@ router.post('/', userGuest, async (req, res) => {
   if (req.user) {
     order.user = req.user.userId;
     order.userType = 'User';
+    
   }
 
   // Save the order

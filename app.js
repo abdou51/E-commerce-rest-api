@@ -5,26 +5,19 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv/config');
 const errorHandler = require('./helpers/error-handler');
-const cookieParser = require('cookie-parser')
 
 
 
 
-app.use(cors({
-    origin: 'http://yourclient.com',
-    credentials: true
-  }));
-app.options('*', cors())
+app.use(cors());
+// app.options('*', cors())
 app.use(express.urlencoded({ extended: true }))
 
 //middleware
 app.use(express.json());
 app.use(morgan('tiny'));
-
-
-
 app.use('/public/uploads', express.static(__dirname + '/public/uploads'));
-app.use(errorHandler);
+
 
 //Routes
 // const categoriesRoutes = require('./routes/categories');
@@ -53,6 +46,8 @@ mongoose.connect(process.env.CONNECTION_STRING, {
     console.log(err);
 })
 
+
+app.use(errorHandler);
 const port = process.env.PORT || 2000;
 
 //Server
