@@ -37,6 +37,7 @@ const shippedOrder = (order, details) => {
           <li>Shipping Address: ${order.shippingAddress1}</li>
           <li>City: ${order.city}</li>
           <li>Phone: ${order.phone}</li>
+          
         </ul>
   
         <p>Total Price: ${order.totalPrice} DZD</p>

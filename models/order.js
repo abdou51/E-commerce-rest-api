@@ -22,7 +22,11 @@ const orderSchema = mongoose.Schema({
         type: String,
         default: 'Guest',
       },
-    city: {
+    wilaya: {
+        type: String,
+        required: true,
+    },
+    commune: {
         type: String,
         required: true,
     },
